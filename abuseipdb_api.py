@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
 import requests
 import os
 
-API_KEY = os.getenv("ABUSEIPDB_API_KEY", "7ff0baaf5ccb45595db11cdd2719e82257581370ce59766d1636525691ec93ce62b62a0964a34d19")
+load_dotenv()
+
+API_KEY = os.getenv("ABUSEIPDB_API_KEY")
 BASE_URL = "https://api.abuseipdb.com/api/v2"
 
 HEADERS = {
