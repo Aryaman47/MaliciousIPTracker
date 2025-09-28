@@ -4,14 +4,14 @@ import abuseipdb_api as abuse
 
 app = Flask(__name__)
 
-# --- Helper: resolve domain to IP ---
+# Resolves domain to IP
 def resolve_ip(ip_or_domain):
     try:
         return socket.gethostbyname(ip_or_domain)
     except Exception:
         return ip_or_domain
 
-# --- Helper: safely prepare table rows ---
+# Safely prepare table for JSON data
 def prepare_table(data):
     rows = {}
     if isinstance(data, dict):
@@ -41,7 +41,6 @@ def index():
         ip = resolve_ip(ip_input)
 
         data = {}
-        # --- Call endpoint safely ---
         try:
             if endpoint == "check":
                 data = abuse.check(ip)
@@ -63,13 +62,13 @@ def index():
         except Exception as e:
             data = {"error": str(e)}
 
-        # --- Prepare table display ---
+        # Prepare Table
         if isinstance(data, dict) and "data" in data:
             result = prepare_table(data["data"])
         else:
             result = prepare_table(data)
 
-        # --- Risk level for /check only ---
+        # Risk level evaluation for the endpoint /check only to generate piechart
         if endpoint == "check" and "abuseConfidenceScore" in result:
             try:
                 score = int(result.get("abuseConfidenceScore", 0))
