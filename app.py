@@ -40,7 +40,7 @@ def index():
         endpoint = request.form.get("endpoint")
         ip = resolve_ip(ip_input)
 
-        data = {}
+        data = {} 
         try:
             if endpoint == "check":
                 data = abuse.check(ip)
