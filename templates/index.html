@@ -1,38 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>AbuseIPDB Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-light">
-<div class="container mt-5">
-    <h2 class="mb-4">AbuseIPDB Dashboard</h2>
-    
-    <form method="POST" class="mb-4" enctype="multipart/form-data">
-        <div class="input-group mb-2">
-            <input type="text" name="ip" class="form-control" placeholder="Enter IP Address or Domain" value="{{ ip_input }}" required>
-            <select name="endpoint" id="endpointSelect" class="form-select">
-                <option value="check">Check (with chart)</option>
-                <option value="blacklist">Blacklist</option>
-                <option value="bulkreport">Bulk Report</option>
-                <option value="check-block">Check Block</option>
-                <option value="clear-address">Clear Address</option>
-                <option value="report">Report</option>
-                <option value="reports">Reports</option>
-            </select>
-            <button class="btn btn-primary" type="submit">Submit</button>
-        </div>
+    <div class="container mt-5">
+        <h2 class="mb-4">AbuseIPDB Dashboard</h2>
 
-        <!-- CSV upload section, hidden by default -->
-        <div class="mb-3" id="csvUploadDiv" style="display:none;">
-            <label for="csvFile" class="form-label">Upload CSV file for bulk report:</label>
-            <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv">
-        </div>
-    </form>
+        <form method="POST" class="mb-4" enctype="multipart/form-data">
+            <div class="input-group mb-2">
+                <input type="text" name="ip" class="form-control" placeholder="Enter IP Address or Domain"
+                    value="{{ ip_input }}" required>
+                <select name="endpoint" id="endpointSelect" class="form-select">
+                    <option value="check">Check (with chart)</option>
+                    <option value="blacklist">Blacklist</option>
+                    <option value="bulkreport">Bulk Report</option>
+                    <option value="check-block">Check Block</option>
+                    <option value="clear-address">Clear Address</option>
+                    <option value="report">Report</option>
+                    <option value="reports">Reports</option>
+                </select>
+                <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
 
-    {% if result %}
+            <!-- CSV upload section, hidden by default -->
+            <div class="mb-3" id="csvUploadDiv" style="display:none;">
+                <label for="csvFile" class="form-label">Upload CSV file for bulk report:</label>
+                <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv">
+            </div>
+        </form>
+
+        {% if result %}
         {% if 'abuseConfidenceScore' in result %}
         <h4>Results for {{ result['ipAddress'] }}:</h4>
         <ul class="list-group mb-4">
@@ -50,14 +53,14 @@
                     datasets: [{
                         label: 'Risk',
                         data: [{{ result['abuseConfidenceScore'] }}, {{ 100 - result['abuseConfidenceScore'] }}],
-                        backgroundColor: ['#dc3545','#28a745'],
-                    }]
+                backgroundColor: ['#dc3545', '#28a745'],
+            }]
                 },
-                options: {
-                    responsive: true,
+            options: {
+                responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                        plugins: { legend: { position: 'bottom' } }
+            }
             });
         </script>
         {% endif %}
@@ -74,32 +77,60 @@
                 </thead>
                 <tbody>
                     {% for key, value in result.items() %}
-                        <tr>
-                            <td>{{ key }}</td>
-                            <td>{{ value }}</td>
-                        </tr>
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    {% endif %}
-</div>
+        {% endif %}
+        {% if report_results %}
+        <h4 class="mt-4">Detailed Reports:</h4>
+        <div class="table-responsive" style="max-height: 500px; overflow:auto;">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in report_results %}
+                    <tr class="table-secondary">
+                        <td colspan="2" class="fw-bold">Report {{ loop.index }}</td>
+                    </tr>
+                    {% for key, value in report.items() %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
 
-<script>
-    const endpointSelect = document.getElementById("endpointSelect");
-    const csvDiv = document.getElementById("csvUploadDiv");
+    </div>
 
-    function toggleCsvUpload() {
-        if (endpointSelect.value === "bulkreport") {
-            csvDiv.style.display = "block";
-        } else {
-            csvDiv.style.display = "none";
+    <script>
+        const endpointSelect = document.getElementById("endpointSelect");
+        const csvDiv = document.getElementById("csvUploadDiv");
+
+        function toggleCsvUpload() {
+            if (endpointSelect.value === "bulkreport") {
+                csvDiv.style.display = "block";
+            } else {
+                csvDiv.style.display = "none";
+            }
         }
-    }
 
-    toggleCsvUpload();
-    endpointSelect.addEventListener("change", toggleCsvUpload);
-</script>
+        toggleCsvUpload();
+        endpointSelect.addEventListener("change", toggleCsvUpload);
+    </script>
 
 </body>
+
 </html>

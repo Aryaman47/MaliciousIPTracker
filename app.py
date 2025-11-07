@@ -11,36 +11,45 @@ def resolve_ip(ip_or_domain):
     except Exception:
         return ip_or_domain
 
-# Safely prepare table for JSON data
+# Safely prepare a readable key-value mapping
 def prepare_table(data):
     rows = {}
     if isinstance(data, dict):
         for k, v in data.items():
             if isinstance(v, list):
-                # Convert list to comma-separated string
-                rows[k] = ', '.join([str(i) if not isinstance(i, dict) else str(i) for i in v])
+                rows[k] = ', '.join(
+                    [str(i) if not isinstance(i, dict) else str(i) for i in v]
+                )
             elif isinstance(v, dict):
-                # Convert nested dict to string
                 rows[k] = str(v)
             else:
                 rows[k] = v
     elif isinstance(data, list):
-        rows = {"Items": ', '.join([str(i) for i in data])}
+        formatted_list = []
+        for item in data:
+            if isinstance(item, dict):
+                formatted_list.append(', '.join(f"{k}: {v}" for k, v in item.items()))
+            else:
+                formatted_list.append(str(item))
+        rows = {"Items": ', '.join(formatted_list)}
     else:
         rows = {"Value": data}
     return rows
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
+    report_results = None   # second table for reports endpoint
     risk_level = None
     ip_input = ''
+
     if request.method == "POST":
         ip_input = request.form.get("ip")
         endpoint = request.form.get("endpoint")
         ip = resolve_ip(ip_input)
 
-        data = {} 
+        data = {}
         try:
             if endpoint == "check":
                 data = abuse.check(ip)
@@ -62,14 +71,35 @@ def index():
         except Exception as e:
             data = {"error": str(e)}
 
-        # Prepare Table
-        if isinstance(data, dict) and "data" in data:
-            result = prepare_table(data["data"])
-        else:
-            result = prepare_table(data)
+        # --- Unified table formatting logic ---
+        if isinstance(data, dict):
+            if "data" in data:
+                payload = data["data"]
+                # Special handling for 'reports' endpoint
+                if endpoint == "reports" and "results" in payload:
+                    # Summary table (excluding 'results')
+                    summary_data = {k: v for k, v in payload.items() if k != "results"}
+                    result = prepare_table(summary_data)
 
-        # Risk level evaluation for the endpoint /check only to generate piechart
-        if endpoint == "check" and "abuseConfidenceScore" in result:
+                    # Detailed reports table
+                    report_results = []
+                    for entry in payload["results"]:
+                        report_results.append(prepare_table(entry))
+                else:
+                    result = prepare_table(payload)
+            elif "message" in data:
+                result = {"Message": data["message"]}
+            elif "errors" in data:
+                result = {"Error(s)": ', '.join(str(e) for e in data["errors"])}
+            else:
+                result = prepare_table(data)
+        elif isinstance(data, list):
+            result = prepare_table(data)
+        else:
+            result = {"Response": str(data)}
+
+        # Risk level evaluation (for /check endpoint only)
+        if endpoint == "check" and isinstance(result, dict):
             try:
                 score = int(result.get("abuseConfidenceScore", 0))
                 if score > 75:
@@ -81,7 +111,14 @@ def index():
             except Exception:
                 risk_level = "Unknown"
 
-    return render_template("index.html", result=result, risk_level=risk_level, ip_input=ip_input)
+    return render_template(
+        "index.html",
+        result=result,
+        report_results=report_results,
+        risk_level=risk_level,
+        ip_input=ip_input
+    )
+
 
 if __name__ == "__main__":
     app.run(debug=True)
