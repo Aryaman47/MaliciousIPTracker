@@ -1,0 +1,4 @@
+IP,Categories,ReportDate,Comment
+192.168.0.1,"18,22",2025-09-28T12:00:00+00:00,Port scanning detected from this IP.
+8.8.8.8,14,2025-09-28T12:05:00+00:00,Public DNS used suspiciously.
+45.33.32.156,"15,21",2025-09-28T12:10:00+00:00,Brute force attempt noticed.
